@@ -1,0 +1,192 @@
+# 🛢️ 油气田故障诊断智能问答 Agent
+
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Workflow-orange.svg)](https://www.langchain.com/langgraph)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+基于 **FastAPI + LangGraph** 的油气田设备故障诊断 RAG Agent，面向压缩机、分离器、干管、集气站外输和气井积液等场景，支持自然语言故障描述 → 实体抽取 → 故障分类 → 知识库检索 → 根因分析 → 处置方案生成的完整诊断链路。
+
+## ✨ 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| 🩺 `/diagnose` | 自然语言故障诊断，输出根因分析、处置步骤、风险提示和参考依据 |
+| 📝 `/feedback` | 用户对诊断结果进行评分和反馈，持续优化诊断质量 |
+| 📄 知识库导入 | 支持 Word 文档解析为结构化 JSON 知识库 |
+| 🔍 混合检索 | 实体抽取 + 关键词匹配 + 语义检索的混合策略 |
+| 🧠 LangGraph 状态机 | 分类 → 信息补全判断 → 检索 → 根因分析 → 方案生成 → 最终回答 |
+| 🔌 可选 LLM | 不配置 API Key 时也能基于本地规则和知识库运行；配置后增强推理能力 |
+
+## 🏗️ 架构概览
+
+```text
+用户输入
+  │
+  ▼
+┌─────────────┐    ┌──────────────┐    ┌──────────────┐
+│  实体抽取    │───▶│  故障分类     │───▶│  混合检索     │
+│ (entity)    │    │ (classify)   │    │ (retrieve)   │
+└─────────────┘    └──────────────┘    └──────────────┘
+                                              │
+                         ┌────────────────────┘
+                         ▼
+                  ┌──────────────┐    ┌──────────────┐
+                  │  根因分析     │───▶│  方案生成     │
+                  │ (root_cause) │    │ (solution)   │
+                  └──────────────┘    └──────────────┘
+                                              │
+                                              ▼
+                                       最终诊断结果
+```
+
+## 🚀 快速开始
+
+### 环境要求
+
+- Python 3.10+
+- Windows / Linux / macOS
+
+### 安装运行
+
+```bash
+# 创建虚拟环境
+python -m venv .venv
+
+# 激活环境
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 启动服务
+uvicorn main:app --reload
+```
+
+打开浏览器访问 Swagger 文档：
+
+```
+http://127.0.0.1:8000/docs
+```
+
+### 测试诊断
+
+```bash
+# Windows PowerShell
+curl -X POST http://127.0.0.1:8000/diagnose `
+  -H "Content-Type: application/json" `
+  -d '{"query":"压缩机压力过高报警怎么办？","session_id":"test123"}'
+```
+
+```bash
+# Linux/macOS
+curl -X POST http://127.0.0.1:8000/diagnose \
+  -H "Content-Type: application/json" \
+  -d '{"query":"压缩机压力过高报警怎么办？","session_id":"test123"}'
+```
+
+## 📚 导入 Word 知识库
+
+将你的 `知识.docx` 放入 `data/raw/` 目录后执行：
+
+```bash
+python scripts/build_knowledge_base.py --doc data/raw/知识.docx --output data/processed/fault_knowledge.json
+```
+
+脚本按标题和步骤抽取知识块，写入 API 默认读取的知识库文件。
+
+## 📊 评估
+
+内置 20 条故障场景测试用例：
+
+```bash
+# 运行评估脚本
+python scripts/evaluate.py
+
+# 运行单元测试
+pytest
+```
+
+## ⚙️ 配置 LLM（可选）
+
+复制 `.env.example` 为 `.env` 并设置环境变量：
+
+```bash
+# Windows
+set OPENAI_API_KEY=your_key_here
+set OPENAI_MODEL=gpt-4o-mini
+
+# Linux/macOS
+export OPENAI_API_KEY=your_key_here
+export OPENAI_MODEL=gpt-4o-mini
+```
+
+> 未配置 LLM 时，Agent 会使用本地规则和知识库进行确定性推理，保证离线可用。
+
+## 📁 项目结构
+
+```text
+fault-diagnosis-agent/
+├── main.py                          # FastAPI 入口
+├── requirements.txt                 # Python 依赖
+├── pyproject.toml                   # 项目配置
+├── docker-compose.yml               # Docker 部署配置
+├── .env.example                     # 环境变量模板
+│
+├── src/fault_diagnosis_agent/
+│   ├── api.py                       # FastAPI 路由定义
+│   ├── config.py                    # 配置管理
+│   ├── diagnosis.py                 # 核心诊断逻辑
+│   ├── graph.py                     # LangGraph 状态机
+│   ├── llm.py                       # LLM 调用封装
+│   ├── models.py                    # 数据模型
+│   ├── prompts.py                   # Prompt 模板
+│   └── retrieval/
+│       ├── entity_extractor.py      # 实体抽取
+│       ├── fault_types.py           # 故障分类体系
+│       ├── hybrid_retriever.py      # 混合检索
+│       └── document_processor.py    # 文档处理
+│
+├── scripts/
+│   ├── build_knowledge_base.py      # 知识库构建
+│   ├── evaluate.py                  # 评估脚本
+│   └── draw_graph.py                # 状态图绘制
+│
+├── data/
+│   ├── processed/fault_knowledge.json  # 结构化知识库
+│   ├── eval/test_cases.json         # 测试用例
+│   └── feedback/feedback.jsonl      # 用户反馈
+│
+├── static/                          # 前端页面
+│   ├── index.html                   # 诊断页面
+│   ├── kb.html                      # 知识库管理
+│   ├── trace.html                   # 诊断追溯
+│   ├── css/style.css
+│   └── js/
+│
+├── tests/                           # 单元测试
+│   ├── test_diagnosis.py
+│   └── test_entity_extractor.py
+│
+└── docs/                            # 文档
+    ├── fault_diagnosis_graph.md
+    └── trae_development_log.md
+```
+
+## 🛠️ 技术栈
+
+| 组件 | 技术 |
+|------|------|
+| Web 框架 | FastAPI |
+| 工作流引擎 | LangGraph |
+| LLM 接口 | OpenAI API (兼容) |
+| 检索策略 | 实体抽取 + 关键词 + 语义 |
+| 部署 | Docker / Uvicorn |
+| 测试 | pytest |
+
+## 📄 License
+
+MIT License
