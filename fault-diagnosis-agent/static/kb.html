@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>知识库总览</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="page">
+  <div class="container" style="margin-top:32px;">
+    <div class="page-header">
+      <h1>&#x1F4CA; 知识库总览</h1>
+      <a class="back" href="index.html">&larr; 返回首页</a>
+    </div>
+
+    <div class="panel">
+      <h2>整体统计</h2>
+      <div id="overview" class="kv">加载中…</div>
+    </div>
+
+    <div class="panel">
+      <h2>分布图表</h2>
+      <div class="charts">
+        <div class="chart-box"><h3 style="margin:0 0 8px;font-size:14px;color:var(--primary-dark);">设备分布</h3><canvas id="deviceChart" width="300" height="220"></canvas></div>
+        <div class="chart-box"><h3 style="margin:0 0 8px;font-size:14px;color:var(--primary-dark);">故障类型分布</h3><canvas id="faultChart" width="300" height="220"></canvas></div>
+        <div class="chart-box"><h3 style="margin:0 0 8px;font-size:14px;color:var(--primary-dark);">指标分布</h3><canvas id="indicatorChart" width="300" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>所有条目</h2>
+      <table class="data-table" id="kb-items-table">
+        <thead><tr><th>ID</th><th>标题</th><th>设备</th><th>指标</th><th>步骤数</th><th>别名数</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="js/common.js"></script>
+  <script src="js/kb.js"></script>
+</body>
+</html>
